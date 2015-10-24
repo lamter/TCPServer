@@ -1,0 +1,3 @@
+[submodule "src/lib/woodmoo"]
+	path = src/lib/woodmoo
+	url = https://lamter@github.com/lamter/woodmoo.git
