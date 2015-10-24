@@ -41,27 +41,20 @@ class Server(StreamServer):
     """
     socket 服务器
     """
-    def __init__(self, address, async=True):
+    def __init__(self, address, async=False):
         pool = Pool(conf_server.ASYNC_SIZE)
         StreamServer.__init__(self, address, self.connection_handler, spawn=pool)
 
         self.serverData = ServerData(self)
-        # self.socketsCache = Queue(conf_server.SOCKET_CACHE_SIZE)        # socket缓存
-        self.sockets = Queue(conf_server.SOCKET_SIZE)                    # 绑定了服务器实例的 socket
 
-        # 清空socket超时缓存
-        # self.spawn(self.clearSocketCache)
+        self.sockets = Queue(conf_server.SOCKET_SIZE)                    # 绑定了服务器实例的 socket
 
         if async:
             # 异步处理每个 socket 的数据
             self.spawn(self.async)
         else:
-            # # TODO 顺序逐个处理 socket 的数据,返回后再处理下一个
+            # 顺序逐个处理 socket 的数据,返回后再处理下一个
             self.spawn(self.sync)
-
-
-
-
 
 
     def connection_handler(self, socket, address):
@@ -71,7 +64,7 @@ class Server(StreamServer):
         :param address:
         :return:
         """
-        print 'new connection from %s:%s' % address
+        print('new connection from %s:%s' % address)
 
         # 缓存链接
         self.saveSocket(socket)
@@ -100,33 +93,6 @@ class Server(StreamServer):
         self.sockets.put(socket)
 
 
-    # @forever
-    # def clearSocketCache(self):
-    #     """
-    #     用于并发
-    #     :return:
-    #     """
-    #     self._doClearSocketCache()
-
-
-    # def _doClearSocketCache(self):
-    #     """
-    #     清除过期的 socket 缓存
-    #     :return:
-    #     """
-    #     socket = self.socketsCache.get()
-    #
-    #     if socket.cacheTimeOut is None:
-    #         # 这个 socket 链接已经不属于缓存
-    #         pass
-    #     elif socket.cacheTimeOut < datetime.datetime.now():
-    #         # 没超时的放回去,
-    #         socket.close()
-    #     else:
-    #         self.socketsCache.put(socket)
-
-
-
     def spawn(self, func, *args, **kwargs):
         """
         并发任务
@@ -136,27 +102,30 @@ class Server(StreamServer):
 
 
     @forever
-    def async(self):
+    def sync(self):
         """
         异步处理接受到的 socket 数据，执行请求逻辑，并响应
         :return:
         """
         now = datetime.datetime.now()
         for _ in xrange(self.sockets.qsize()):
-            socket = self.sockets.get()
-            if socket.cacheTimeOut is not None and socket.cacheTimeOut <= now:
-                # 过期的 socket 关闭并抛弃
-                socket.close()
-                continue
+            try:
+                socket = self.sockets.get()
+                if socket.cacheTimeOut is not None and socket.cacheTimeOut <= now:
+                    # 过期的 socket 关闭并抛弃
+                    socket.close()
+                    continue
 
-            # 提取数据
-            # print socket.recv(10)
+                # 采用Int32位，解密解压出数据，可根据需求更改
+                AES_KEY = self.get_AES_KEY()
+                _json = loadInt32(AES_KEY, socket)
 
-            _json = loadInt32(socket)
-
-            # 并发执行这个请求
-            # self.spawn(InnerRequest.new(_json, socket).doIt)
-            self.sockets.put(socket )
+            except:
+                traceback.print_exc()
+                # 并发执行这个请求
+                # self.spawn(InnerRequest.new(_json, socket).doIt)
+            finally:
+                self.sockets.put(socket)
 
         # 走完一轮， 跳转
         sleep(0)
@@ -164,25 +133,31 @@ class Server(StreamServer):
 
 
     @forever
-    def sync(self):
+    def async(self):
         """
         :return:
         """
-        print u' sync, 未完成'
+        print(u' sync, 未完成')
 
 
+    def get_AES_KEY(self):
+        """
 
+        :return:
+        """
+        return conf_server.AES_KEY
 
-
-# 服务器实例
-address = (conf_server.SERVER_IP, conf_server.SERVER_PORT)
-server = Server(address)
 
 
 def run():
+    # 服务器实例
+    address = (conf_server.SERVER_IP, conf_server.SERVER_PORT)
+    server = Server(address)
     server.serve_forever()
 
 
 if __name__ == "__main__":
+    # you can add conf_debug.py to set arg of conf_server.
+    import conf_debug
     run()
 

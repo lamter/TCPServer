@@ -61,3 +61,6 @@ target/
 
 # log
 *.log
+
+# debug
+conf_debug.py
