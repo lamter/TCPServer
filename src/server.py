@@ -5,21 +5,35 @@ Created on 2015-10-23
 @author: Shawn
 '''
 
+from gevent import monkey
+monkey.patch_all()
+
 import datetime
 import functools
 import traceback
+import signal
+import logging
 
-import conf_server
 from lib.woodmoo import loadInt32
 
+import gevent
 from gevent import sleep
-from gevent.socket import socket as gsocket
 from gevent.server import StreamServer
 from gevent.pool import Pool
 from gevent.queue import Queue
 
+import conf_server
+if __name__ == "__main__": import conf_debug
+import log
 from serverdata import ServerData
 from innerrequest import InnerRequest
+
+
+
+SHUT_DOWN_SIGN = [
+    signal.SIGQUIT,     # kill 信号
+    signal.SIGINT,      # 键盘信号
+]
 
 
 def forever(func):
@@ -29,12 +43,14 @@ def forever(func):
         # print 'call %s():' % func.__name__
         try:
             while 1:
-                r =  func(*args, **kw)
-        except:
-            traceback.print_exc()
+                r = func(*args, **kw)
+                sleep(0)    # 完成之后跳转
+        except gevent.GreenletExit:
+            logging.info('stop forever %s ...' % func.__name__)
 
         return r
     return wrapper
+
 
 
 class Server(StreamServer):
@@ -42,6 +58,10 @@ class Server(StreamServer):
     socket 服务器
     """
     def __init__(self, address, async=False):
+        for sign in SHUT_DOWN_SIGN:
+            ''' 关服信号 '''
+            gevent.signal(sign, self.shutdown)
+
         pool = Pool(conf_server.ASYNC_SIZE)
         StreamServer.__init__(self, address, self.connection_handler, spawn=pool)
 
@@ -56,6 +76,9 @@ class Server(StreamServer):
             # 顺序逐个处理 socket 的数据,返回后再处理下一个
             self.spawn(self.sync)
 
+        # 循环记录日志
+        # self.spawn(self.flushLog)
+
 
     def connection_handler(self, socket, address):
         """
@@ -64,7 +87,7 @@ class Server(StreamServer):
         :param address:
         :return:
         """
-        print('new connection from %s:%s' % address)
+        logging.info('new connection from %s:%s' % address)
 
         # 缓存链接
         self.saveSocket(socket)
@@ -120,16 +143,12 @@ class Server(StreamServer):
                 AES_KEY = self.get_AES_KEY()
                 _json = loadInt32(AES_KEY, socket)
 
+            except gevent.GreenletExit:
+                raise
             except:
-                traceback.print_exc()
-                # 并发执行这个请求
-                # self.spawn(InnerRequest.new(_json, socket).doIt)
+                logging.error(traceback.format_exc())
             finally:
                 self.sockets.put(socket)
-
-        # 走完一轮， 跳转
-        sleep(0)
-
 
 
     @forever
@@ -137,7 +156,7 @@ class Server(StreamServer):
         """
         :return:
         """
-        print(u' sync, 未完成')
+        logging.warn('Server.async 未完成')
 
 
     def get_AES_KEY(self):
@@ -148,16 +167,27 @@ class Server(StreamServer):
         return conf_server.AES_KEY
 
 
+    def shutdown(self):
+        """
+        关服时要做的事情
+        :return:
+        """
+
+        # 关闭日志模块
+        logging.shutdown()
+
+        # 关闭服务器
+        self.close()
+
 
 def run():
     # 服务器实例
     address = (conf_server.SERVER_IP, conf_server.SERVER_PORT)
     server = Server(address)
+    logging.info('start server ...')
     server.serve_forever()
 
 
 if __name__ == "__main__":
-    # you can add conf_debug.py to set arg of conf_server.
-    import conf_debug
     run()
 

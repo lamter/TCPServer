@@ -6,11 +6,17 @@ Created on 2015-10-23
 '''
 
 import datetime
+import logging
 
 # 服务器的IP地址
 SERVER_IP = '127.0.0.1'
-# SERVER_PORT = 8912
 SERVER_PORT = 8912
+SERVER_NAME = 'tcpserver'
+
+# 运行环境
+PRODUCTION = False              # 生产环境
+DEVELOPMENT = True              # 开发环境
+DEBUG = False                   # 测试环境
 
 # socket 链接缓存大小
 SOCKET_CACHE_SIZE = 100
@@ -25,3 +31,7 @@ SOCKET_SIZE = 1000
 # AES_KEY 要16位字符
 AES_KEY = '0123456789ABCDEF'
 
+
+# 日志相关
+LOG_LEVEL = logging.INFO
+LOG_PATH = 'log/'
