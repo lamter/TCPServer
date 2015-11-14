@@ -38,4 +38,4 @@ AES_KEY = '0123456789ABCDEF'
 
 # 日志相关
 LOG_LEVEL = logging.INFO
-LOG_PATH = 'log/'
+LOG_PATH = '../log/'

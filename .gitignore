@@ -64,3 +64,6 @@ target/
 
 # debug
 conf_debug.py
+
+# service
+nohup.out
