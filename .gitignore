@@ -67,4 +67,4 @@ conf_debug.py
 
 # service
 nohup.out
-tmp/
+tmp/`
