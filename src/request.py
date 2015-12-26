@@ -69,7 +69,7 @@ class UnvalidRequestData(BaseRequest):
     def doIt(self):
         """
         """
-        logging.debug("无效的请求类型")
+        logging.debug("无效的请求类型:%s" % self.data.get('type'))
         response.UnvalidRequestData(self.tag, self.socket, self.server).send()
 
 

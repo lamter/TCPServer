@@ -150,7 +150,9 @@ class Server(StreamServer):
 
                 # 采用Int32位，解密解压出数据，可根据需求更改
                 AES_KEY = self.get_AES_KEY()
-                data = loadInt32(AES_KEY, _socket)
+                data = loadInt32(_socket, AES_KEY)
+
+                logging.debug(u'receive from %s:%s \n%s' % (_socket.host,_socket.port, data))
 
                 # 业务逻辑处理，此处可重构
                 self.async(data, _socket)
@@ -251,7 +253,7 @@ def run():
     # 服务器实例
     address = (conf_server.SERVER_IP, conf_server.SERVER_PORT)
     server = Server(address)
-    logging.info('start server ...')
+    logging.info('start server %s:%s ...' % address)
     server.serve_forever()
 
 
