@@ -18,9 +18,8 @@ class BaseResponse(object):
     REQUEST_TEST = 10001
     REQUEST_UNVALID = 10002
 
-    def __init__(self, tag, _type, _socket, server):
+    def __init__(self, tag, _type, _socket):
         self.socket = _socket
-        self.server = server
         self.tag = tag
         self.type = _type
         self.data = {
@@ -30,7 +29,7 @@ class BaseResponse(object):
 
     @property
     def server(self):
-        return serverdata.ServerData.server
+        return serverdata.serverData.server
 
 
     def json(self):
@@ -56,6 +55,6 @@ class UnvalidRequestData(BaseResponse):
     无效的请求数据
     """
 
-    def __init__(self, tag, _socket, server):
-        BaseResponse.__init__(self, tag, BaseResponse.REQUEST_UNVALID, _socket, server)
+    def __init__(self, tag, _socket):
+        BaseResponse.__init__(self, tag, BaseResponse.REQUEST_UNVALID, _socket)
 
