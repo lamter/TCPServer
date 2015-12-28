@@ -8,6 +8,7 @@ Created on 2015-10-25
 import traceback
 import json
 
+import serverdata
 
 
 class BaseResponse(object):
@@ -26,6 +27,10 @@ class BaseResponse(object):
             'tag': self.tag,
             'type': self.type,
         }
+
+    @property
+    def server(self):
+        return serverdata.ServerData.server
 
 
     def json(self):

@@ -6,12 +6,16 @@ Created on 2015-10-23
 '''
 
 
+global serverData
+
 
 class ServerData(object):
     """
 
     """
     def __init__(self, server):
+        global serverData
+        serverData = self
         self.server = server
 
 
