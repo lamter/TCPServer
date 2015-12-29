@@ -26,7 +26,9 @@ class BaseRequest(object):
             if not isinstance(dic, dict):
                 raise ValueError('unvaild json data ...')
 
-            RequestClass = cls.getClassByType(dic.get('type'))
+            _type = dic.get('type')
+            RequestClass = cls.getClassByType(_type)
+
             return RequestClass(dic, _socket)
 
         except:

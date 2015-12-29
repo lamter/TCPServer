@@ -68,6 +68,7 @@ class Server(StreamServer):
 
         self.serverData = ServerData(self)
 
+        ''' 所有 socket 放在这里用于轮询 '''
         self.sockets = Queue(conf_server.SOCKET_SIZE)                    # 绑定了服务器实例的 socket
 
         # 处理收到的数据
@@ -113,7 +114,7 @@ class Server(StreamServer):
         _socket.cacheTimeOut = datetime.datetime.now() + conf_server.SOCKET_CACHE_TIME_OUT
 
         # socket 本身的超时, n 秒后超时
-        timeOutSeconds = conf_server.SOCKET_SEND_TIME_OUT.total_seconds()
+        timeOutSeconds = conf_server.SOCKET_CACHE_TIME_OUT.total_seconds()
         _socket.settimeout(timeOutSeconds)
 
 
@@ -155,7 +156,8 @@ class Server(StreamServer):
                 logging.debug(u'receive from %s:%s \n%s' % (_socket.host,_socket.port, data))
 
                 # 业务逻辑处理，此处可重构
-                self.async(data, _socket)
+                if data:
+                    self.async(data, _socket)
 
             except gevent.GreenletExit:
                 raise
@@ -195,7 +197,7 @@ class Server(StreamServer):
         """
 
         # 实例化 request
-        r = BaseRequest.new(_json, self, _socket)
+        r = BaseRequest.new(_json, _socket)
         # 执行逻辑
         r.doIt()
 
@@ -240,6 +242,7 @@ class Server(StreamServer):
 
         if _socket.cacheTimeOut is not None and _socket.cacheTimeOut <= now:
             # 过期的 _socket 关闭并抛弃
+            logging.debug(u'socket.cacheTimeOut 过期, socket 被关闭 ...')
             _socket.close()
             return False
         if _socket.closed:
