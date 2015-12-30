@@ -97,6 +97,12 @@ class Server(StreamServer):
         # 绑定其地址端口
         _socket.host, _socket.port = address
 
+        # 尚未绑定实例, 用这个属性来绑定实例
+        _socket.link = None
+
+        # 是否绑定一个实例
+        _socket.isLink = lambda: _socket.link is not None
+
         # 缓存链接
         self.saveSocket(_socket)
 
