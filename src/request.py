@@ -20,12 +20,8 @@ class BaseRequest(object):
     REQUEST_TEST = '10001'
 
     @classmethod
-    def new(cls, _json, _socket):
+    def new(cls, dic, _socket):
         try:
-            dic = json.loads(_json)
-            if not isinstance(dic, dict):
-                raise ValueError('unvaild json data ...')
-
             _type = dic.get('type')
             RequestClass = cls.getClassByType(_type)
 
@@ -86,8 +82,17 @@ class Test(BaseRequest):
     """
     测试用的请求
     """
-    def __init__(self, dic, _socket):
+
+    def doIt(self):
         """
+
         :return:
         """
 
+        # 给 socket 绑定实例
+        logging.debug('给 socket 绑定实例: True')
+        serverdata.serverData.server.socketLink(self.socket, True)
+
+        logging.info('这是一个测试用的协议')
+
+        response.ResponseTest(self.tag, self.socket).send()

@@ -20,8 +20,8 @@ DEBUG = False                   # 测试环境
 
 # socket 链接缓存大小
 SOCKET_CACHE_SIZE = 100
-SOCKET_CACHE_TIME_OUT = datetime.timedelta(seconds=100)  # 十秒没有建立实例就是超时
-SOCKET_SEND_TIME_OUT = datetime.timedelta(seconds=10)      # n 秒发送数据超时
+SOCKET_CACHE_TIME_OUT = datetime.timedelta(seconds=15)  # 十秒没有建立实例就是超时
+SOCKET_SEND_TIME_OUT = datetime.timedelta(seconds=5)      # n 秒发送数据超时
 
 # socket 超时重发次数
 SOCKET_TIME_OUT_RESEND_TIMES = 3

@@ -8,6 +8,7 @@ Created on 2015-10-23
 from gevent import monkey
 monkey.patch_all()
 
+import json
 import datetime
 import functools
 import traceback
@@ -103,6 +104,9 @@ class Server(StreamServer):
         # 是否绑定一个实例
         _socket.isLink = lambda: _socket.link is not None
 
+        # 响应缓存
+        _socket.responseCache = {}      # {tag: response}
+
         # 缓存链接
         self.saveSocket(_socket)
 
@@ -151,15 +155,35 @@ class Server(StreamServer):
         for _ in xrange(self.sockets.qsize()):
             try:
                 _socket = self.sockets.get()
-                if not self.isSocketValid(_socket, now):
+                isValid = False
+                isValid = self.isSocketValid(_socket, now)
+                if not isValid:
                     # 检查链接是否有效
                     continue
 
                 # 采用Int32位，解密解压出数据，可根据需求更改
                 AES_KEY = self.get_AES_KEY()
-                data = loadInt32(_socket, AES_KEY)
+                try:
+                    _json = loadInt32(_socket, AES_KEY)
+                except:
+                    isValid = False
+                    raise
 
-                logging.debug(u'receive from %s:%s \n%s' % (_socket.host,_socket.port, data))
+                logging.debug(u'receive from %s:%s \n%s' % (_socket.host,_socket.port, _json))
+
+                data = json.loads(_json)
+                if not isinstance(data, dict):
+                    raise ValueError('unvaild json data ...')
+
+                # 返回响应缓存
+                if _socket.isLink():
+                    ''' 绑定了实例才返回缓存 '''
+                    cache = self.getResponseCache(_socket, data)
+                    logging.debug('返回缓存 response cache, data : %s' % data)
+                    if cache:
+                        [_response.send() for _response in cache]
+                        ''' 直接返回响应 '''
+                        continue
 
                 # 业务逻辑处理，此处可重构
                 if data:
@@ -168,9 +192,10 @@ class Server(StreamServer):
             except gevent.GreenletExit:
                 raise
             except:
-                logging.error(traceback.format_exc())
+                logging.error(u'receive from %s:%s \n%s' % (_socket.host, _socket.port, traceback.format_exc()))
             finally:
-                self.sockets.put(_socket)
+                if isValid:
+                    self.sockets.put(_socket)
 
 
     def get_AES_KEY(self):
@@ -194,16 +219,17 @@ class Server(StreamServer):
         self.close()
 
 
-    def async(self, _json, _socket):
+    def async(self, dic, _socket):
         """
         异步模式的业务处理，并发业务
-        :param _json: 传入的数据需要为 json 格式
+        :param dic: 传入的数据需要为 dic 格式
         :param _socket:
         :return:
         """
 
+
         # 实例化 request
-        r = BaseRequest.new(_json, _socket)
+        r = BaseRequest.new(dic, _socket)
         # 执行逻辑
         r.doIt()
 
@@ -217,16 +243,24 @@ class Server(StreamServer):
         # 在 async() 中绑定了 socket 链接
         _socket = _response.socket
 
+        # 保存响应缓存
+        if _socket.isLink() and _response.isNeedSaveCache():
+            # 绑定了实例，并且属于需要保存缓存的， 保存响应缓存
+            self.saveResponseCache(_socket, _response)
+
         # json 格式的数据
         _json = _response.json()
 
         # 加压加密
-        data = dumpInt32(_json, conf_server.AES_KEY)
+        AES_KEY = self.get_AES_KEY()
+        data = dumpInt32(_json, AES_KEY)
+
         # logging.debug('send dat to %s:%s dat:\n' % (_socket.host, _socket.port) + data)
 
         def _send(_socket, data):
 
             try:
+                # 发送数据
                 _socket.sendall(data)
             except:
                 err = 'Send dat to %s:%s faild. data len:%s err:\n' % (_socket.host, _socket.port, len(data))
@@ -248,7 +282,7 @@ class Server(StreamServer):
 
         if _socket.cacheTimeOut is not None and _socket.cacheTimeOut <= now:
             # 过期的 _socket 关闭并抛弃
-            logging.debug(u'socket.cacheTimeOut 过期, socket 被关闭 ...')
+            logging.debug(u'socket.cacheTimeOut 过期, socket %s:%s 被关闭 ...' % (_socket.host, _socket.port))
             _socket.close()
             return False
         if _socket.closed:
@@ -256,6 +290,41 @@ class Server(StreamServer):
             return False
 
         return True
+
+
+    def socketLink(self, _socket, link):
+        """
+        给 socket 绑定一个实例
+        :param _socket:
+        :param link:
+        :return:
+        """
+        _socket.link = link
+
+        # 清空响应缓存
+        _socket.responseCache = {}
+
+
+    def saveResponseCache(self, _socket, _response):
+        """
+        :return:
+        """
+        logging.debug('保存 response cache : %s' % _response)
+        _socket.responseCache[_response.tag] = _response
+
+
+    def getResponseCache(self, _socket, data):
+        """
+        :param _socket:
+        :param data:
+        :return: set()
+        """
+
+        cache = _socket.responseCache.get(data.get('tag'))
+        if cache is None:
+            cache = set()
+
+        return cache
 
 
 def run():
