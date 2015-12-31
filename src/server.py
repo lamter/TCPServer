@@ -183,10 +183,10 @@ class Server(StreamServer):
                 if _socket.isLink():
                     ''' 绑定了实例才返回缓存 '''
                     _response = self.getResponseCache(_socket, data)
-                    logging.debug('返回缓存 response cache, data : %s' % data)
                     if _response:
                         ''' 直接返回响应 '''
                         _response.send()
+                        logging.debug(u'返回缓存 response cache, data : %s' % data)
                         continue
 
                 # 业务逻辑处理，此处可重构
@@ -214,6 +214,9 @@ class Server(StreamServer):
         关服时要做的事情
         :return:
         """
+
+        # 关闭所有的 socket
+        self.closeSockets()
 
         # 关闭日志模块
         logging.shutdown()
@@ -325,6 +328,17 @@ class Server(StreamServer):
 
         return _socket.responseCache.get(data.get('tag'))
 
+
+    def closeSockets(self):
+        """
+        关闭所有 socket
+        :return:
+        """
+
+        logging.debug(u'即将关闭 %s 个 socket 链接...' % self.sockets.qsize())
+        while not self.sockets.empty():
+            s = self.sockets.get_nowait()
+            s.close()
 
 
 

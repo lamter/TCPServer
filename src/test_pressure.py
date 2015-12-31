@@ -29,7 +29,7 @@ class TestPressure(unittest.TestCase):
 
         # 压力测试
         self.sockets = {}
-        self.socketNum = 500
+        self.socketNum = 10
         self.address = self.host, self.port = 'localhost', 8912
 
         # 生成 socket 实例
@@ -70,6 +70,8 @@ class TestPressure(unittest.TestCase):
 
         # 第二次 并发发送数据
         Group().map(send, self.sockets.itervalues())
+
+        time.sleep(10)
 
         # 第一次 收取数据
         print Group().map(recv, self.sockets.itervalues())
