@@ -197,7 +197,7 @@ class Server(StreamServer):
             raise
         except gevent.socket.error:
             _socket.close()
-            logging.debug(u'关服，关闭当前的 socket ...')
+            logging.info(u'关服，关闭当前的 socket ...')
         except:
             logging.error(u'receive from %s:%s \n%s' % (_socket.host, _socket.port, traceback.format_exc()))
         finally:
@@ -296,7 +296,7 @@ class Server(StreamServer):
 
         if _socket.cacheTimeOut is not None and _socket.cacheTimeOut <= datetime.datetime.now():
             # 过期的 _socket 关闭并抛弃
-            logging.debug(u'socket.cacheTimeOut 过期, socket %s:%s 被关闭 ...' % (_socket.host, _socket.port))
+            logging.info(u'socket.cacheTimeOut 过期, socket %s:%s 被关闭 ...' % (_socket.host, _socket.port))
             _socket.close()
             return False
         if _socket.closed:
@@ -353,7 +353,7 @@ class Server(StreamServer):
         :return:
         """
 
-        logging.debug(u'即将关闭 %s 个 socket 链接...' % self.sockets.qsize())
+        logging.info(u'即将关闭 %s 个 socket 链接...' % self.sockets.qsize())
         while not self.sockets.empty():
             s = self.sockets.get_nowait()
             s.close()
