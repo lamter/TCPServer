@@ -20,7 +20,6 @@ import conf_debug
 from request import BaseRequest
 
 
-''' 建立 redisco 的链接 '''
 
 class TestSocket(unittest.TestCase):
     '''
@@ -31,6 +30,10 @@ class TestSocket(unittest.TestCase):
         self.address = (self.host, self.port)
         self.socket = socket.socket()
         self.socket.connect(self.address)
+
+        # 压力测试
+        self.sockets = {}
+
 
 
     def tearDown(self):
@@ -78,6 +81,5 @@ class TestSocket(unittest.TestCase):
 
         print loadInt32(self.socket, conf_server.AES_KEY)
         time.sleep(1)
-
 
 

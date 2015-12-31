@@ -169,6 +169,10 @@ class Server(StreamServer):
                     isValid = False
                     raise
 
+                if not _json:
+                    # 没有收到数据
+                    continue
+
                 logging.debug(u'receive from %s:%s \n%s' % (_socket.host,_socket.port, _json))
 
                 data = json.loads(_json)
@@ -178,16 +182,15 @@ class Server(StreamServer):
                 # 返回响应缓存
                 if _socket.isLink():
                     ''' 绑定了实例才返回缓存 '''
-                    cache = self.getResponseCache(_socket, data)
+                    _response = self.getResponseCache(_socket, data)
                     logging.debug('返回缓存 response cache, data : %s' % data)
-                    if cache:
-                        [_response.send() for _response in cache]
+                    if _response:
                         ''' 直接返回响应 '''
+                        _response.send()
                         continue
 
                 # 业务逻辑处理，此处可重构
-                if data:
-                    self.async(data, _socket)
+                self.async(data, _socket)
 
             except gevent.GreenletExit:
                 raise
@@ -317,14 +320,12 @@ class Server(StreamServer):
         """
         :param _socket:
         :param data:
-        :return: set()
+        :return: _response
         """
 
-        cache = _socket.responseCache.get(data.get('tag'))
-        if cache is None:
-            cache = set()
+        return _socket.responseCache.get(data.get('tag'))
 
-        return cache
+
 
 
 def run():
