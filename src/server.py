@@ -27,6 +27,7 @@ import conf_server
 if __name__ == "__main__":
     import conf_debug
 
+import comment
 import log
 from serverdata import ServerData
 from request import BaseRequest
@@ -315,8 +316,8 @@ class Server(StreamServer):
         """
         _socket.link = link
 
-        # 清空响应缓存
-        _socket.responseCache = {}
+        # 重设响应缓存，及其缓存数量
+        _socket.responseCache = comment.LastUpdatedOrderedDict(conf_server.RESPONSE_CACHE_SIZE)
 
 
     def saveRequestTag(self, _socket, tag):

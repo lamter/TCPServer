@@ -39,3 +39,6 @@ AES_KEY = '0123456789ABCDEF'
 # 日志相关
 LOG_LEVEL = logging.INFO
 LOG_PATH = '../log/'
+
+# 响应缓存数量
+RESPONSE_CACHE_SIZE = 100
