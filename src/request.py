@@ -9,7 +9,7 @@ import traceback
 import json
 import logging
 
-from error import *
+from errs import *
 import response
 import serverdata
 

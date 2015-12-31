@@ -27,7 +27,7 @@ SOCKET_SEND_TIME_OUT = datetime.timedelta(seconds=5)      # n 秒发送数据超
 SOCKET_TIME_OUT_RESEND_TIMES = 3
 
 # 并发数量
-ASYNC_SIZE = 1000
+ASYNC_SIZE = 10000
 
 # 保持的 socket 链接数
 SOCKET_SIZE = 1000

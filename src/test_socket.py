@@ -20,6 +20,7 @@ import conf_debug
 from request import BaseRequest
 
 
+''' 建立 redisco 的链接 '''
 
 class TestSocket(unittest.TestCase):
     '''

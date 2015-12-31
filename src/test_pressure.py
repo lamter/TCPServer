@@ -11,6 +11,7 @@ monkey.patch_all()
 import time
 import unittest
 import json
+import random
 
 from gevent.pool import Group
 import socket
@@ -29,7 +30,7 @@ class TestPressure(unittest.TestCase):
 
         # 压力测试
         self.sockets = {}
-        self.socketNum = 10
+        self.socketNum = 1000
         self.address = self.host, self.port = 'localhost', 8912
 
         # 生成 socket 实例
@@ -66,20 +67,14 @@ class TestPressure(unittest.TestCase):
         recv = lambda s:s.recv(1024)
 
         # 第一次 并发发送数据
-        Group().map(send, self.sockets.itervalues())
+        Group().map(send, random.sample(self.sockets.values(), len(self.sockets)))
 
         # 第二次 并发发送数据
-        Group().map(send, self.sockets.itervalues())
-
-        time.sleep(10)
+        Group().map(send, random.sample(self.sockets.values(), len(self.sockets)))
 
         # 第一次 收取数据
-        print Group().map(recv, self.sockets.itervalues())
+        print Group().map(recv, random.sample(self.sockets.values(), len(self.sockets)))
 
         # 第二次 收取数据
-        print Group().map(recv, self.sockets.itervalues())
-
-
-
-
+        print Group().map(recv, random.sample(self.sockets.values(), len(self.sockets)))
 

@@ -45,12 +45,11 @@ def forever(func):
     def wrapper(*args, **kw):
         try:
             while 1:
-                r = func(*args, **kw)
+                func(*args, **kw)
                 sleep(0)    # 完成之后跳转
         except gevent.GreenletExit:
             logging.info('stop forever %s ...' % func.__name__)
 
-        return r
     return wrapper
 
 
@@ -151,54 +150,59 @@ class Server(StreamServer):
         异步处理接受到的 socket 数据，执行请求逻辑，并响应
         :return:
         """
-        now = datetime.datetime.now()
-        for _ in xrange(self.sockets.qsize()):
+        # for _ in xrange(self.sockets.qsize()):
+        self.pool.map(self._recv, self.sockets)
+
+
+    def _recv(self, _socket):
+        isValid = False
+        try:
+            isValid = self.isSocketValid(_socket)
+            if not isValid:
+                # 检查链接是否有效
+                return
+
+            # 采用Int32位，解密解压出数据，可根据需求更改
+            AES_KEY = self.get_AES_KEY()
             try:
-                _socket = self.sockets.get()
-                isValid = False
-                isValid = self.isSocketValid(_socket, now)
-                if not isValid:
-                    # 检查链接是否有效
-                    continue
-
-                # 采用Int32位，解密解压出数据，可根据需求更改
-                AES_KEY = self.get_AES_KEY()
-                try:
-                    _json = loadInt32(_socket, AES_KEY)
-                except:
-                    isValid = False
-                    raise
-
-                if not _json:
-                    # 没有收到数据
-                    continue
-
-                logging.debug(u'receive from %s:%s \n%s' % (_socket.host,_socket.port, _json))
-
-                data = json.loads(_json)
-                if not isinstance(data, dict):
-                    raise ValueError('unvaild json data ...')
-
-                # 返回响应缓存
-                if _socket.isLink():
-                    ''' 绑定了实例才返回缓存 '''
-                    _response = self.getResponseCache(_socket, data)
-                    if _response:
-                        ''' 直接返回响应 '''
-                        _response.send()
-                        logging.debug(u'返回缓存 response cache, data : %s' % data)
-                        continue
-
-                # 业务逻辑处理，此处可重构
-                self.async(data, _socket)
-
-            except gevent.GreenletExit:
-                raise
+                _json = loadInt32(_socket, AES_KEY)
             except:
-                logging.error(u'receive from %s:%s \n%s' % (_socket.host, _socket.port, traceback.format_exc()))
-            finally:
-                if isValid:
-                    self.sockets.put(_socket)
+                isValid = False
+                raise
+
+            if not _json:
+                # 没有收到数据
+                return
+
+            logging.debug(u'receive from %s:%s \n%s' % (_socket.host,_socket.port, _json))
+
+            data = json.loads(_json)
+            if not isinstance(data, dict):
+                raise ValueError('unvaild json data ...')
+
+            # 返回响应缓存
+            if _socket.isLink():
+                ''' 绑定了实例才返回缓存 '''
+                _response = self.getResponseCache(_socket, data)
+                if _response:
+                    ''' 直接返回响应 '''
+                    _response.send()
+                    logging.debug(u'返回缓存 response cache, data : %s' % data)
+                    return
+
+                    # 业务逻辑处理，此处可重构
+            self.async(data, _socket)
+
+        except gevent.GreenletExit:
+            raise
+        except gevent.socket.error:
+            _socket.close()
+            logging.debug(u'关服，关闭当前的 socket ...')
+        except:
+            logging.error(u'receive from %s:%s \n%s' % (_socket.host, _socket.port, traceback.format_exc()))
+        finally:
+            if isValid:
+                self.sockets.put(_socket)
 
 
     def get_AES_KEY(self):
@@ -236,6 +240,10 @@ class Server(StreamServer):
 
         # 实例化 request
         r = BaseRequest.new(dic, _socket)
+
+        # 保存 tag
+        self.saveRequestTag(_socket, r.tag)
+
         # 执行逻辑
         r.doIt()
 
@@ -279,14 +287,14 @@ class Server(StreamServer):
         self.spawn(_send, _socket, data)
 
 
-    def isSocketValid(self, _socket, now):
+    def isSocketValid(self, _socket):
         """
         这条 socket 链接是否还有效
         :param _socket:
         :return:
         """
 
-        if _socket.cacheTimeOut is not None and _socket.cacheTimeOut <= now:
+        if _socket.cacheTimeOut is not None and _socket.cacheTimeOut <= datetime.datetime.now():
             # 过期的 _socket 关闭并抛弃
             logging.debug(u'socket.cacheTimeOut 过期, socket %s:%s 被关闭 ...' % (_socket.host, _socket.port))
             _socket.close()
@@ -309,6 +317,16 @@ class Server(StreamServer):
 
         # 清空响应缓存
         _socket.responseCache = {}
+
+
+    def saveRequestTag(self, _socket, tag):
+        """
+        先保存到这个 tag
+        :param _socket:
+        :param tag:
+        :return:
+        """
+        _socket.responseCache[tag] = None
 
 
     def saveResponseCache(self, _socket, _response):
