@@ -190,6 +190,9 @@ class Server(StreamServer):
                     _response.send()
                     logging.debug(u'返回缓存 response cache, data : %s' % data)
                     return
+                elif self.isHaveRequest(_socket, data):
+                    ''' 已经在处理这个请求，还没生成响应，则跳过 '''
+                    return
 
                     # 业务逻辑处理，此处可重构
             self.async(data, _socket)
@@ -346,6 +349,17 @@ class Server(StreamServer):
         """
 
         return _socket.responseCache.get(data.get('tag'))
+
+
+    def isHaveRequest(self, _socket, data):
+        """
+        已经在处理这个请求了，还没生成 response
+        :param _socket:
+        :param data:
+        :return: _response
+        """
+
+        return data.get('tag') in _socket.responseCache
 
 
     def closeSockets(self):
