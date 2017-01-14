@@ -18,11 +18,12 @@ queue = Queue()
 queue.put('123')
 queue.put('456')
 
-print queue.peek()
-print queue.peek()
+print(queue.peek())
+print(queue.peek())
+
 
 import json
-print json.loads('123')
+print(json.loads('123'))
 
 
 

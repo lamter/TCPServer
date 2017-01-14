@@ -58,7 +58,7 @@ class TestSocket(unittest.TestCase):
 
         self.socket.sendall(data)
 
-        print loadInt32(self.socket, conf_server.AES_KEY)
+        print(loadInt32(self.socket, conf_server.AES_KEY))
 
 
     def test_receiveCache(self):
@@ -80,7 +80,7 @@ class TestSocket(unittest.TestCase):
         self.socket.sendall(data)
         self.socket.sendall(data)
 
-        print loadInt32(self.socket, conf_server.AES_KEY)
+        print(loadInt32(self.socket, conf_server.AES_KEY))
         time.sleep(1)
 
 

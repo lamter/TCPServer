@@ -73,8 +73,8 @@ class TestPressure(unittest.TestCase):
         Group().map(send, random.sample(self.sockets.values(), len(self.sockets)))
 
         # 第一次 收取数据
-        print Group().map(recv, random.sample(self.sockets.values(), len(self.sockets)))
+        print(Group().map(recv, random.sample(self.sockets.values(), len(self.sockets))))
 
         # 第二次 收取数据
-        print Group().map(recv, random.sample(self.sockets.values(), len(self.sockets)))
+        print(Group().map(recv, random.sample(self.sockets.values(), len(self.sockets))))
 
