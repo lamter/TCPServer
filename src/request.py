@@ -9,8 +9,9 @@ import traceback
 import json
 import logging
 
-from error import *
+from errs import *
 import response
+import serverdata
 
 class BaseRequest(object):
     """
@@ -19,14 +20,12 @@ class BaseRequest(object):
     REQUEST_TEST = '10001'
 
     @classmethod
-    def new(cls, _json, server, _socket):
+    def new(cls, dic, _socket):
         try:
-            dic = json.loads(_json)
-            if not isinstance(dic, dict):
-                raise ValueError('unvaild json data ...')
+            _type = dic.get('type')
+            RequestClass = cls.getClassByType(_type)
 
-            RequestClass = cls.getClassByType(dic.get('type'))
-            return RequestClass(dic, server, _socket)
+            return RequestClass(dic, _socket)
 
         except:
             logging.error(traceback.format_exc())
@@ -52,14 +51,19 @@ class BaseRequest(object):
         raise FunctionUndefind(self.doIt)
 
 
-    def __init__(self, dic, server, _socket):
+    def __init__(self, dic, _socket):
         """
 
         """
         self.tag = dic.get('tag')
         self.data = dic
-        self.server = server
         self.socket = _socket
+
+
+    @property
+    def server(self):
+        return serverdata.serverData.server
+
 
 
 class UnvalidRequestData(BaseRequest):
@@ -69,8 +73,8 @@ class UnvalidRequestData(BaseRequest):
     def doIt(self):
         """
         """
-        logging.debug("无效的请求类型")
-        response.UnvalidRequestData(self.tag, self.socket, self.server).send()
+        logging.debug("无效的请求类型:%s" % self.data.get('type'))
+        response.UnvalidRequestData(self.tag, self.socket).send()
 
 
 
@@ -78,8 +82,17 @@ class Test(BaseRequest):
     """
     测试用的请求
     """
-    def __init__(self, dic, _socket):
+
+    def doIt(self):
         """
+
         :return:
         """
 
+        # 给 socket 绑定实例
+        logging.debug('给 socket 绑定实例: True')
+        serverdata.serverData.server.socketLink(self.socket, True)
+
+        logging.info('这是一个测试用的协议')
+
+        response.ResponseTest(self.tag, self.socket).send()

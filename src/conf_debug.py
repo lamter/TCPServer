@@ -11,8 +11,11 @@ import datetime
 import conf_server
 
 # 服务器的IP地址
-conf_server.SERVER_IP = '127.0.0.1'
-conf_server.SERVER_PORT = 20007
+# conf_server.SERVER_IP = '127.0.0.1'
+# conf_server.SERVER_PORT = 8912
+
+# 加密
+conf_server.AES_KEY = None
 
 # 测试环境
 conf_server.DEBUG = True
