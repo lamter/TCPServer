@@ -13,7 +13,7 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
+.eggs/m
 lib/
 lib64/
 parts/
@@ -67,3 +67,4 @@ conf_debug.py
 
 # service
 nohup.out
+tmp/`
