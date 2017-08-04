@@ -48,7 +48,7 @@ class BaseRequest(object):
         """
         :return:
         """
-        raise FunctionUndefind(self.doIt)
+        raise NotImplementedError()
 
 
     def __init__(self, dic, _socket):

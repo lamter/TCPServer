@@ -13,7 +13,7 @@ import unittest
 import json
 
 import socket
-from lib.woodmoo import *
+from mynetwork import *
 
 import conf_server
 import conf_debug

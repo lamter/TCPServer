@@ -25,5 +25,5 @@ conf_server.ARG = options.arg
 
 
 if __name__ == "__main__":
-    import server
-    server.run()
+    import tcpserver
+    tcpserver.run()

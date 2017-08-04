@@ -15,7 +15,7 @@ import traceback
 import signal
 import logging
 
-from lib.woodmoo import *
+from mynetwork import *
 
 import gevent
 from gevent import sleep
@@ -23,14 +23,14 @@ from gevent.server import StreamServer
 from gevent.pool import Pool
 from gevent.queue import Queue
 
-import conf_server
+import server.conf_server as conf_server
 if __name__ == "__main__":
     import conf_debug
 
-import comment
+import server.comment as comment
 import log
-from serverdata import ServerData
-from request import BaseRequest
+from server.serverdata import ServerData
+from server.request import BaseRequest
 
 
 
@@ -59,7 +59,7 @@ class Server(StreamServer):
     """
     socket 服务器
     """
-    def __init__(self, address, async=False):
+    def __init__(self, address):
         for sign in SHUT_DOWN_SIGN:
             ''' 关服信号 '''
             gevent.signal(sign, self.shutdown)
